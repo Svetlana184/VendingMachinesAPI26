@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using VendingMachinesApi26.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -133,6 +133,13 @@ app.MapPut("/api/maintainances/put", [Authorize] async (Maintenance maintenance,
         db.Update(new_maintenance);
         db.SaveChanges();
     }
+});
+
+app.MapGet("api/users/info", async (string email, VendingMachines26Context db) =>
+{
+    User? check_user = db.Users.FirstOrDefault(u => u.Email == email);
+    return check_user;
+
 });
 
 app.Run();

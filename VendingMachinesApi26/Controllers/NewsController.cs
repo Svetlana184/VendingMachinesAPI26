@@ -5,7 +5,7 @@ using VendingMachinesApi26.Models;
 namespace VendingMachinesApi26.Controllers
 {
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class NewsController : ControllerBase
     {
 
