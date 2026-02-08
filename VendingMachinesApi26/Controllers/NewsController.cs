@@ -9,7 +9,7 @@ namespace VendingMachinesApi26.Controllers
     public class NewsController : ControllerBase
     {
 
-        private News[] news;
+        private List<News> news;
 
         public NewsController()
         {
@@ -49,7 +49,13 @@ namespace VendingMachinesApi26.Controllers
         [Route("/api/news")]
         public IQueryable GetNews()
         {
-            return news.AsQueryable();
+            var query = from n in news
+                        select new
+                        {
+                            Text = n.Text,
+                            Date = n.Date
+                        };
+            return query.AsQueryable();
         }
     }
 }

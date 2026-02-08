@@ -10,6 +10,17 @@ using VendingMachinesApi26.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy",
+        builder => builder
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed((host) => true)
+            .AllowAnyHeader());
+});
+
 builder.Services.AddDbContext<VendingMachines26Context>(opt =>
 opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConection")));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -31,6 +42,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Hello World!");
@@ -135,7 +147,7 @@ app.MapPut("/api/maintainances/put", [Authorize] async (Maintenance maintenance,
     }
 });
 
-app.MapGet("api/users/info", async (string email, VendingMachines26Context db) =>
+app.MapPost("api/users/info", async (string email, VendingMachines26Context db) =>
 {
     User? check_user = db.Users.FirstOrDefault(u => u.Email == email);
     return check_user;
