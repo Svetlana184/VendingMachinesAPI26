@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -8,8 +7,6 @@ using System.Security.Claims;
 using VendingMachinesApi26.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors(options =>
 {
@@ -20,9 +17,15 @@ builder.Services.AddCors(options =>
             .SetIsOriginAllowed((host) => true)
             .AllowAnyHeader());
 });
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+
 
 builder.Services.AddDbContext<VendingMachines26Context>(opt =>
 opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConection")));
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -37,25 +40,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
         };
     });
+
+
 var app = builder.Build();
 app.UseRouting();
+
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Hello World!");
 
-app.Map("/login/api/v1/SignIn", async (User emp, VendingMachines26Context db) =>
+app.MapPost("/login/api/v1/SignIn", async (User emp, VendingMachines26Context db) =>
 {
     User? employee = await db.Users.FirstOrDefaultAsync(p => p.Email == emp.Email && p.Password == emp.Password);
-   
-    var claims = new List<Claim> { new Claim(ClaimTypes.Surname, emp.Password) };
+
+    if (employee == null) return Results.Unauthorized();
+
+    var claims = new List<Claim> { new Claim(ClaimTypes.Email, emp.Email) };
     var jwt = new JwtSecurityToken(
             issuer: AuthOptions.ISSUER,
-    audience: AuthOptions.AUDIENCE,
-    claims: claims,
+            audience: AuthOptions.AUDIENCE,
+            claims: claims,
             expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(10)),
             signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
 
@@ -69,7 +77,7 @@ app.Map("/login/api/v1/SignIn", async (User emp, VendingMachines26Context db) =>
 });
 
 app.MapPost("/api/machines/post", 
-    [Authorize] async (VendingMachine machine, VendingMachines26Context db) => {
+    async (VendingMachine machine, VendingMachines26Context db) => {
     
     VendingMachine newMachine = new VendingMachine
     {
